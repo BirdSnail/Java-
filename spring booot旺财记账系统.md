@@ -166,7 +166,7 @@ class UserInfoControllerTest {
 - 用户在线时长
 - 流量分布情况
 
-### 需要哪些组件（服务）
+## 3.2 需要哪些组件（服务）
 
 **罗列所有的功能。选出核心功能**
 
@@ -203,7 +203,9 @@ class UserInfoControllerTest {
 - 编辑已有标签
 - 删除已有标签
 
-### 数据的存储，访问
+## 
+
+## 3.3 数据的存储，访问
 
 #### SQL V.S NoSQL
 
@@ -217,9 +219,92 @@ class UserInfoControllerTest {
 
 - 使用中间表
 
-### 可用性
+## 3.4 可用性
 
-### 安全性
+## 3.5 安全性
 
-### 监控报警
+## 3.6 监控报警
+
+# 4. 数据模型
+
+跟业务紧密相关，定义良好的数据模型是业务开发的关键。
+
+## 4.1 用户模型
+
+```java
+class UserInfo{
+	Long id; 				// userId,主键，自增
+	String userName;		// 用户名
+    String passWord; 		// 密码
+    String slat; 			// 密码加密用的盐
+    LocalDateTime createTime; // 创建时间
+    LocalDateTime updateTime; // 更新时间
+}
+```
+
+
+
+## 4.2 标签模型
+
+```java
+class Tag{
+	Long id; 				// tagId,主键，自增
+    Long userId;		 	// 所属用户的userId
+    Integer status; 		// 数据状态， 0 -> disable, 1 -> enable
+    String description; 	// 标签描述（内容）
+    LocalDateTime createTime; // 创建时间
+    LocalDateTime updateTime; // 更新时间
+}
+```
+
+
+
+## 4.3 Record模型
+
+```java
+class Record {
+    Long id; 			// 主键，自增
+    Long userId; 		// 用户id(这条记录所属用户)
+    Integer status; 	// 数据状态，  0 -> disable, 1 -> enable
+    BigDecimal amount;  // 金额
+    Integer category;	// 类别，收入/支出
+    String note; 		// 备注
+    List<Tag> tagList;	// 包含的标签
+    LocalDateTime createTime; // 创建时间
+    LocalDateTime updateTime; // 更新时间
+}
+```
+
+
+
+# 5. 疑难问题
+
+- 模型转换
+
+  - View层model没有的属性在DAO层进行设值。
+
+- tag中间表
+
+  ```tex
+  record 与 tag 之间的映射关系。避免重复的存储。
+    1. 一条record拥有多个tag。
+    2. 所有的tag专门存储在一张表中。
+    3. 根据一个record id可以映射出多个 tag id，然后根据tag id在tag表中查询实际的tag内容。
+  ```
+
+- 使用父类的equals and hascode
+
+- 将自增的id插入数据库后写入原有的对象。
+
+  - 使用Mybatis注解：`@Options`
+
+- 查询结果状态List中。
+
+- 更新接口的开发：
+
+  - 全量更新：简单，但是会造成数据库的频繁访问。
+  - 局部更新：判断原纪录与更新的记录的diff，只更新改变的字段，如果要更新`Tag`就涉及到中间表的更新，实现起来麻烦。
+    1. tag 是否需要更新。
+    2. 是的话 `disable/delete`原有的tag中间表（id, recordId, tagId）.
+    3. 插入新的映射关系。
 
